@@ -1,278 +1,468 @@
 'use client';
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
-  Home, 
-  Bell, 
-  Trophy, 
-  Settings, 
-  Leaf, 
-  Zap, 
-  Droplets, 
-  Wind, 
-  ChevronLeft, 
-  TrendingUp,
-  Target,
-  ArrowRight,
-  Menu
+  ArrowRight, Leaf, ShieldAlert, Zap, Home, Building2, 
+  Radio, CloudLightning, Globe2, Lock, 
+  ScanLine, BarChart3, Wifi, Battery, Fingerprint, Loader2,
+  LayoutGrid // <--- Fixed: Added this import
 } from "lucide-react";
 import { Outfit, Inter } from "next/font/google";
+import { 
+  motion, 
+  AnimatePresence, 
+  useScroll, 
+  useTransform, 
+  PanInfo,
+  useMotionValue
+} from "framer-motion";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
-// 1. Setup Premium Fonts
+// 1. Font Configuration
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-// Navigation Data
-const navItems = [
-  { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/alerts", label: "Alerts", icon: Bell },
-  { href: "/challenges", label: "Win", icon: Trophy },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
+// ==============================================================================
+// UTILITIES
+// ==============================================================================
 
-export default function ImpactPage() {
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// ==============================================================================
+// COMPONENT 1: MOBILE VIEW
+// ==============================================================================
+
+function MobileView() {
+  const [step, setStep] = useState<number>(0);
+  const [direction, setDirection] = useState(0); // -1 for left, 1 for right
+  
+  // Data & Config for Slides
+  const slides = [
+    {
+      id: 0,
+      color: "emerald",
+      icon: <Leaf className="text-emerald-400" />,
+      title: "Eco Intelligence",
+      subtitle: "Real-time carbon footprint tracking.",
+      stat: "-32% CO₂",
+      statLabel: "This Month"
+    },
+    {
+      id: 1,
+      color: "amber",
+      icon: <ScanLine className="text-amber-400" />,
+      title: "Bill Scanner",
+      subtitle: "AI breaks down your utility costs.",
+      stat: "$142.50",
+      statLabel: "Est. Savings"
+    },
+    {
+      id: 2,
+      color: "blue",
+      icon: <BarChart3 className="text-blue-400" />,
+      title: "Community Sync",
+      subtitle: "Compare usage with neighbors.",
+      stat: "Top 10%",
+      statLabel: "Efficiency Rank"
+    },
+    {
+      id: 3,
+      color: "rose",
+      icon: <Radio className="text-rose-400" />,
+      title: "Crisis Mode",
+      subtitle: "Offline alerts during grid failure.",
+      stat: "ACTIVE",
+      statLabel: "Low Bandwidth"
+    }
+  ];
+
+// Gesture Handler for Swiping
+  const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
+    const swipeConfidenceThreshold = 10000;
+    const swipePower = Math.abs(offset.x) * velocity.x;
+
+    if (swipePower < -swipeConfidenceThreshold && step < 4) {
+      setDirection(1);
+      setStep(step + 1);
+    } else if (swipePower > swipeConfidenceThreshold && step > 0) {
+      setDirection(-1);
+      setStep(step - 1);
+    }
+  };
+  const currentSlide = slides[Math.min(step, 3)];
+
   return (
-    <div className={`${outfit.variable} ${inter.variable} min-h-screen bg-[#050B08] text-white font-sans selection:bg-emerald-500/30`}>
+    <div className="font-sans h-[100dvh] w-full bg-black text-white overflow-hidden relative flex flex-col">
       
-      {/* 2. BACKGROUND FX: Glowing Orbs & Noise Texture */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[100px]" />
-        <div className="absolute top-[20%] right-[20%] w-[300px] h-[300px] bg-lime-500/10 rounded-full blur-[100px]" />
-        {/* Noise overlay for texture */}
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] brightness-100 contrast-150 mix-blend-overlay"></div>
+      {/* Dynamic Background Glow */}
+      <motion.div 
+        animate={{ backgroundColor: step === 0 ? '#064e3b' : step === 1 ? '#78350f' : step === 2 ? '#1e3a8a' : step === 3 ? '#881337' : '#000' }}
+        className="absolute -top-[20%] -left-[20%] w-[140%] h-[60%] blur-[120px] opacity-40 transition-colors duration-700"
+      />
+
+      {/* Header / Progress */}
+      <div className="relative z-20 pt-6 px-6 flex justify-between items-center">
+         <div className="flex gap-2 items-center">
+            <div className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10">
+               {step < 4 ? currentSlide.icon : <Fingerprint className="text-emerald-400"/>}
+            </div>
+            <span className="font-display font-bold text-sm tracking-widest uppercase opacity-70">Savera</span>
+         </div>
+         {step < 4 && (
+             <div className="flex gap-1">
+               {[0,1,2,3].map(i => (
+                 <motion.div 
+                   key={i}
+                   animate={{ 
+                     width: i === step ? 24 : 6,
+                     backgroundColor: i === step ? "#fff" : "rgba(255,255,255,0.2)"
+                   }}
+                   className="h-1.5 rounded-full"
+                 />
+               ))}
+             </div>
+         )}
       </div>
 
-      <div className="relative z-10 flex flex-col md:flex-row h-screen overflow-hidden">
-        
-        {/* =========================================
-            DESKTOP SIDEBAR (Glassmorphism) 
-           ========================================= */}
-        <aside className="hidden md:flex flex-col w-72 h-full border-r border-white/5 bg-white/[0.02] backdrop-blur-2xl p-6">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.4)]">
-              <Leaf className="text-white w-6 h-6 fill-white/20" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight font-display">SAVERA</span>
-          </div>
-
-          <nav className="flex-1 space-y-2">
-            {navItems.map((item) => (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${item.label === 'Home' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
-              >
-                <item.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            ))}
-          </nav>
-
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-900/50 to-teal-900/50 border border-emerald-500/20">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-emerald-500/20">
-                <Target className="w-4 h-4 text-emerald-400" />
+      {/* Main Content Area */}
+      <div className="flex-1 relative z-10 flex flex-col justify-center">
+        <AnimatePresence initial={false} custom={direction} mode="wait">
+          {step < 4 ? (
+            <motion.div
+              key={step}
+              custom={direction}
+              variants={{
+                enter: (direction: number) => ({ x: direction > 0 ? 1000 : -1000, opacity: 0 }),
+                center: { zIndex: 1, x: 0, opacity: 1 },
+                exit: (direction: number) => ({ zIndex: 0, x: direction < 0 ? 1000 : -1000, opacity: 0 })
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={1}
+              onDragEnd={handleDragEnd}
+              className="absolute inset-0 flex flex-col justify-center px-6"
+            >
+              {/* 1. VISUAL WIDGET SECTION */}
+              <div className="flex-1 flex items-center justify-center py-8">
+                 <MobileWidget step={step} />
               </div>
-              <span className="text-sm font-bold text-emerald-100">Daily Goal</span>
-            </div>
-            <p className="text-xs text-emerald-200/70 mb-3">Reduce consumption by 5% today.</p>
-            <div className="h-1.5 w-full bg-emerald-950 rounded-full overflow-hidden">
-              <div className="h-full w-[75%] bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-            </div>
-          </div>
-        </aside>
 
-        {/* =========================================
-            MAIN CONTENT AREA
-           ========================================= */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide">
-          {/* Mobile Header */}
-          <header className="md:hidden sticky top-0 z-50 bg-[#050B08]/80 backdrop-blur-xl border-b border-white/5 px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Leaf className="w-4 h-4 text-white" />
+              {/* 2. TEXT CONTENT SECTION */}
+              <div className="pb-12 space-y-6">
+                 {/* Live Stat Pill */}
+                 <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 backdrop-blur-xl px-4 py-2 rounded-full">
+                    <span className={`text-${currentSlide.color}-400 font-bold font-mono`}>{currentSlide.stat}</span>
+                    <span className="w-[1px] h-4 bg-white/20"/>
+                    <span className="text-xs text-white/50 uppercase tracking-wider">{currentSlide.statLabel}</span>
+                 </div>
+
+                 <div>
+                   <h1 className="text-5xl font-black font-display leading-[0.9] mb-4">{currentSlide.title}</h1>
+                   <p className="text-lg text-white/60 leading-relaxed max-w-[90%]">{currentSlide.subtitle}</p>
+                 </div>
+
+                 {/* Swipe Indicator */}
+                 <div className="flex items-center gap-2 text-white/30 text-sm font-medium animate-pulse">
+                    <span>Swipe to explore</span>
+                    <ArrowRight className="w-4 h-4" />
+                 </div>
               </div>
-              <span className="font-bold font-display text-lg tracking-wide">SAVERA</span>
-            </div>
-            <button className="p-2 rounded-full bg-white/5 border border-white/10">
-              <Bell className="w-5 h-5 text-white/80" />
-            </button>
-          </header>
+            </motion.div>
+          ) : (
+            // 3. ROLE SELECTION SCREEN (Replaces Auth)
+            <RoleSelectionStep key="roles" />
+          )}
+        </AnimatePresence>
+      </div>
 
-          <div className="max-w-7xl mx-auto p-4 md:p-10 md:pb-20 space-y-8">
+      {/* Skip Button (Only on slides) */}
+      {step < 4 && (
+        <div className="absolute bottom-8 right-6 z-20">
+          <button 
+             onClick={() => setStep(4)}
+             className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center font-bold shadow-2xl hover:scale-105 active:scale-95 transition-all"
+          >
+             <ArrowRight className="w-6 h-6" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Sub-Component: Role Selection (Interactive)
+// ----------------------------------------------------------------------
+function RoleSelectionStep() {
+  const router = useRouter();
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const handleSelect = (roleId: string) => {
+    setSelected(roleId);
+    // Simulate short delay for animation, then redirect
+    setTimeout(() => {
+      router.push("/auth");
+    }, 600);
+  };
+
+  const roles = [
+    { 
+      id: 'individual', 
+      icon: <Home className="w-6 h-6" />, 
+      title: "Individual / Household", 
+      desc: "Track bills & save energy." 
+    },
+    { 
+      id: 'community', 
+      icon: <Building2 className="w-6 h-6" />, 
+      title: "Community Manager", 
+      desc: "Manage school or office complex." 
+    },
+    { 
+      id: 'gov', 
+      icon: <LayoutGrid className="w-6 h-6" />, 
+      title: "Gov / Utility Provider", 
+      desc: "Regional data & planning tools." 
+    }
+  ];
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -50 }}
+      className="absolute inset-0 flex flex-col px-6 pt-24 bg-[#050B08] z-30"
+    >
+      <div className="space-y-2 mb-10">
+        <span className="text-emerald-500 font-bold tracking-wider text-xs uppercase">Configuration</span>
+        <h2 className="text-3xl font-bold font-display text-white">How will you use Savera?</h2>
+      </div>
+
+      <div className="space-y-4">
+        {roles.map((role, idx) => (
+          <motion.button
+            key={role.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            onClick={() => handleSelect(role.id)}
+            disabled={selected !== null}
+            className={`w-full flex items-center gap-4 p-5 rounded-2xl border text-left transition-all group relative overflow-hidden
+              ${selected === role.id 
+                ? "bg-emerald-500 border-emerald-500 text-black scale-[0.98]" 
+                : "bg-[#0A0F0D] border-white/10 text-white hover:border-emerald-500/50 hover:bg-emerald-900/10 active:scale-95"
+              }`}
+          >
+             {/* Loading Spinner Overlay */}
+             {selected === role.id && (
+               <motion.div 
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                 className="absolute inset-0 bg-emerald-500 flex items-center justify-center z-10"
+               >
+                 <Loader2 className="w-6 h-6 animate-spin text-black" />
+               </motion.div>
+             )}
+
+            <div className={`p-3 rounded-xl transition-colors ${
+              selected === role.id ? "bg-black/10 text-black" : "bg-white/5 group-hover:bg-emerald-500 group-hover:text-black"
+            }`}>
+              {role.icon}
+            </div>
             
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div>
-                <Link href="/dashboard" className="hidden md:inline-flex items-center gap-2 text-sm text-white/40 hover:text-emerald-400 transition mb-4">
-                  <ChevronLeft className="w-4 h-4" /> Back to Dashboard
-                </Link>
-                <h1 className="text-4xl md:text-6xl font-black font-display tracking-tight text-white mb-2">
-                  Impact <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">Matrix</span>
-                </h1>
-                <p className="text-white/50 text-lg font-light max-w-lg">
-                  Real-time visualization of your environmental footprint and financial efficiency.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button className="px-5 py-2.5 rounded-full bg-emerald-500 text-[#050B08] font-bold text-sm hover:bg-emerald-400 transition shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                  Download Report
-                </button>
-                <button className="px-5 py-2.5 rounded-full bg-white/5 border border-white/10 text-white font-medium text-sm hover:bg-white/10 transition">
-                  Share Stats
-                </button>
-              </div>
+            <div>
+              <h3 className={`font-bold text-lg ${
+                selected === role.id ? "text-black" : "text-white group-hover:text-emerald-400"
+              }`}>
+                {role.title}
+              </h3>
+              <p className={`text-sm leading-snug ${
+                selected === role.id ? "text-black/60" : "text-white/40"
+              }`}>
+                {role.desc}
+              </p>
             </div>
+          </motion.button>
+        ))}
+      </div>
+      
+      {/* Bottom Brand Mark */}
+      <div className="mt-auto pb-8">
+        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/20 font-display font-bold">
+           N
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
-            {/* BENTO GRID LAYOUT */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              
-              {/* 1. Main Savings Card (Spans 2 cols) */}
-              <div className="col-span-1 md:col-span-2 relative group overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-900/40 to-black border border-emerald-500/20 p-8 shadow-2xl">
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition duration-500">
-                  <Zap className="w-48 h-48 text-emerald-400 rotate-12" />
-                </div>
-                
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-                      Total Savings
-                    </span>
-                  </div>
-                  <h2 className="text-6xl md:text-7xl font-black font-display text-white tracking-tighter mt-4">
-                    ₹12,450
-                  </h2>
-                  <p className="text-white/60 text-lg mt-2 font-light">
-                    Thats equivalent to <span className="text-emerald-300 font-medium">3 months</span> of free electricity.
-                  </p>
+// ----------------------------------------------------------------------
+// Sub-Component: Mobile Animated Widgets
+// ----------------------------------------------------------------------
+function MobileWidget({ step }: { step: number }) {
+  const is0 = step === 0;
+  const is1 = step === 1;
+  const is2 = step === 2;
+  const is3 = step === 3;
 
-                  <div className="mt-8 flex items-center gap-4">
-                     <div className="flex -space-x-3">
-                        {[1,2,3].map(i => (
-                          <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-emerald-800 flex items-center justify-center text-xs font-bold text-white/80">
-                            You
-                          </div>
-                        ))}
-                     </div>
-                     <span className="text-sm text-white/50">Top 5% in your area</span>
-                  </div>
-                </div>
-              </div>
+  return (
+    <div className="w-full aspect-square max-w-[320px] bg-white/[0.03] border border-white/10 rounded-[2rem] relative overflow-hidden flex items-center justify-center shadow-2xl">
+       {/* Background Grid */}
+       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}/>
 
-              {/* 2. Water Card */}
-              <div className="col-span-1 md:col-span-1 relative group rounded-[2rem] bg-[#0A1210] border border-white/5 p-6 hover:border-blue-500/30 transition duration-300">
-                <div className="flex justify-between items-start">
-                  <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400">
-                    <Droplets className="w-6 h-6" />
-                  </div>
-                  <TrendingUp className="w-5 h-5 text-emerald-500" />
-                </div>
-                <div className="mt-8">
-                  <p className="text-4xl font-bold font-display">89.2k <span className="text-lg text-white/40 font-normal">L</span></p>
-                  <p className="text-sm text-white/50 mt-1">Water Conserved</p>
-                </div>
-                {/* Visualizer */}
-                <div className="mt-6 flex gap-1 h-12 items-end">
-                   {[40, 60, 35, 70, 50, 80].map((h, i) => (
-                      <div key={i} style={{ height: `${h}%`}} className="flex-1 bg-blue-900/40 rounded-sm hover:bg-blue-500 transition-colors" />
-                   ))}
-                </div>
-              </div>
-
-              {/* 3. CO2 Card */}
-              <div className="col-span-1 md:col-span-1 relative group rounded-[2rem] bg-[#0A1210] border border-white/5 p-6 hover:border-lime-500/30 transition duration-300">
-                <div className="flex justify-between items-start">
-                  <div className="p-3 rounded-2xl bg-lime-500/10 text-lime-400">
-                    <Wind className="w-6 h-6" />
-                  </div>
-                  <TrendingUp className="w-5 h-5 text-emerald-500" />
-                </div>
-                <div className="mt-8">
-                  <p className="text-4xl font-bold font-display">4.2 <span className="text-lg text-white/40 font-normal">Tons</span></p>
-                  <p className="text-sm text-white/50 mt-1">CO₂ Reduced</p>
-                </div>
-                 {/* Visualizer */}
-                 <div className="mt-6 flex gap-1 h-12 items-end">
-                   {[30, 45, 60, 40, 75, 50].map((h, i) => (
-                      <div key={i} style={{ height: `${h}%`}} className="flex-1 bg-lime-900/40 rounded-sm hover:bg-lime-500 transition-colors" />
-                   ))}
-                </div>
-              </div>
-
-              {/* 4. Milestone / Gamification Card (Wide) */}
-              <div className="col-span-1 md:col-span-3 lg:col-span-4 rounded-[2rem] bg-gradient-to-r from-amber-900/20 via-black to-black border border-amber-500/20 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]" />
-                
-                <div className="flex items-center gap-6 relative z-10">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-b from-amber-300 to-amber-600 flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.4)] shrink-0">
-                    <span className="text-2xl md:text-3xl">🥇</span>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold font-display text-white">Gold Badge Incoming</h3>
-                    <p className="text-white/60 text-sm md:text-base">You are only ₹2,550 away from the next tier.</p>
-                  </div>
-                </div>
-
-                <div className="w-full md:w-1/2 relative z-10">
-                  <div className="flex justify-between text-xs font-bold tracking-widest text-amber-500/80 mb-2 uppercase">
-                    <span>Progress</span>
-                    <span>80%</span>
-                  </div>
-                  <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                    <div className="h-full w-[80%] bg-gradient-to-r from-amber-400 to-yellow-200 shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-pulse" />
-                  </div>
-                </div>
-              </div>
-
+       {/* Step 0: Breathing Orb (Eco) */}
+       {is0 && (
+         <div className="relative">
+            <motion.div 
+               animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+               className="absolute inset-0 bg-emerald-500/30 blur-2xl rounded-full"
+            />
+            <div className="relative z-10 flex flex-col items-center">
+               <Leaf className="w-24 h-24 text-emerald-400 mb-4 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
+               <div className="bg-emerald-950/50 border border-emerald-500/30 px-3 py-1 rounded-lg">
+                  <span className="text-emerald-400 font-mono text-sm">CO₂ Monitor Active</span>
+               </div>
             </div>
+         </div>
+       )}
+
+       {/* Step 1: Scanner (Bill) */}
+       {is1 && (
+         <div className="relative w-48 h-64 bg-white rounded-xl overflow-hidden shadow-lg p-4 flex flex-col gap-2">
+            <div className="w-12 h-12 rounded-full bg-amber-100 mb-2"/>
+            <div className="h-2 w-20 bg-gray-200 rounded"/>
+            <div className="h-2 w-32 bg-gray-100 rounded"/>
+            <div className="mt-4 space-y-2">
+               <div className="flex justify-between text-[10px] text-gray-400"><span className="bg-gray-100 w-16 h-2 rounded"/><span>$45.00</span></div>
+               <div className="flex justify-between text-[10px] text-gray-400"><span className="bg-gray-100 w-10 h-2 rounded"/><span>$12.50</span></div>
+            </div>
+            {/* Scan Line */}
+            <motion.div 
+               animate={{ top: ['0%', '100%', '0%'] }}
+               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+               className="absolute left-0 right-0 h-1 bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.8)] z-10"
+            />
+         </div>
+       )}
+
+       {/* Step 2: Bar Chart (Community) */}
+       {is2 && (
+         <div className="flex items-end gap-4 h-48 px-6">
+            <div className="flex flex-col items-center gap-2">
+               <span className="text-xs text-white/30">City</span>
+               <motion.div initial={{ height: 0 }} animate={{ height: 100 }} className="w-12 bg-white/10 rounded-t-lg" />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+               <span className="text-xs text-white/30">Avg</span>
+               <motion.div initial={{ height: 0 }} animate={{ height: 140 }} transition={{ delay: 0.1 }} className="w-12 bg-white/20 rounded-t-lg" />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+               <span className="text-xs text-blue-400 font-bold">You</span>
+               <motion.div 
+                  initial={{ height: 0 }} 
+                  animate={{ height: 80 }} 
+                  transition={{ delay: 0.2, type: 'spring' }} 
+                  className="w-12 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg relative group"
+               >
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full">
+                     Best
+                  </div>
+               </motion.div>
+            </div>
+         </div>
+       )}
+
+       {/* Step 3: Radar (Emergency) */}
+       {is3 && (
+         <div className="relative flex items-center justify-center w-full h-full">
+            {[1,2,3].map((i) => (
+               <motion.div 
+                  key={i}
+                  animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.6 }}
+                  className="absolute border border-rose-500/50 rounded-full w-20 h-20"
+               />
+            ))}
+            <div className="w-24 h-24 bg-rose-950/80 border border-rose-500 rounded-full flex flex-col items-center justify-center z-10 relative">
+               <Wifi className="w-8 h-8 text-rose-500 animate-pulse" />
+               <span className="text-[10px] text-rose-400 mt-1 font-mono">OFFLINE</span>
+            </div>
+            <div className="absolute bottom-6 flex items-center gap-2 bg-black/50 px-3 py-1 rounded-full border border-white/10">
+               <Battery className="w-4 h-4 text-emerald-400" />
+               <span className="text-xs font-mono">8h Left</span>
+            </div>
+         </div>
+       )}
+    </div>
+  );
+}
+
+
+// ==============================================================================
+// COMPONENT 2: DESKTOP VIEW
+// ==============================================================================
+
+function DesktopView() {
+  const { scrollY } = useScroll();
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const y = useTransform(scrollY, [0, 300], [0, 100]);
+
+  return (
+    <div className="min-h-screen bg-[#050B08] text-white font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center py-6 px-4 backdrop-blur-md transition-all border-b border-white/5">
+        <div className="w-full max-w-7xl flex justify-between items-center px-4">
+          <div className="flex items-center gap-2">
+            <Leaf className="w-5 h-5 text-emerald-400" />
+            <span className="font-display font-bold tracking-wide text-xl">SAVERA</span>
           </div>
-          
-          {/* Spacer for bottom nav on mobile */}
-          <div className="h-28 md:hidden" />
-        </main>
-      </div>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/60">
+             <Link href="#ecosystem" className="hover:text-white transition-colors">Ecosystem</Link>
+             <Link href="#emergency" className="hover:text-white transition-colors">Emergency</Link>
+          </div>
+          <Link href="/auth" className="bg-white text-black px-6 py-2 rounded-full text-sm font-bold hover:bg-emerald-400 transition-colors">Login</Link>
+        </div>
+      </nav>
 
-      {/* =========================================
-          MOBILE BOTTOM NAV (Floating Dock)
-         ========================================= */}
-      <div className="md:hidden fixed bottom-6 left-4 right-4 z-50">
-        <nav className="bg-[#050B08]/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] flex justify-around items-center p-2">
-          {navItems.map((item) => {
-            const isActive = item.label === "Home"; // Demo logic
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ${isActive ? 'bg-white/10' : ''}`}
-              >
-                {isActive && (
-                  <span className="absolute -top-1 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]" />
-                )}
-                <item.icon 
-                  className={`w-6 h-6 mb-1 ${isActive ? 'text-emerald-400' : 'text-white/40'}`} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
+      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-20">
+         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:60px_60px] opacity-20" />
+         <motion.div style={{ opacity, y }} className="relative z-10 text-center px-4 max-w-5xl mx-auto space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-md mb-4">
+               <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"/>
+               <span className="text-xs font-bold text-emerald-100 uppercase tracking-widest">Protocol Live</span>
+            </div>
+            <h1 className="text-6xl md:text-9xl font-black font-display tracking-tighter leading-[0.9] bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
+               Energy Intel <br /> For Everyone.
+            </h1>
+            <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
+               The unified sustainable protocol for households, communities, and governance.
+            </p>
+         </motion.div>
+      </section>
+    </div>
+  );
+}
 
-      {/* Global Style Overrides for Fonts */}
-      <style jsx global>{`
-        :root {
-          --font-outfit: ${outfit.style.fontFamily};
-          --font-inter: ${inter.style.fontFamily};
-        }
-        .font-display {
-          font-family: var(--font-outfit), sans-serif;
-        }
-        .font-sans {
-          font-family: var(--font-inter), sans-serif;
-        }
-      `}</style>
+// ==============================================================================
+// MAIN EXPORT
+// ==============================================================================
+export default function SaveraLanding() {
+  return (
+    <div className={`${outfit.variable} ${inter.variable} font-sans antialiased bg-black`}>
+      <div className="block md:hidden">
+        <MobileView />
+      </div>
+      <div className="hidden md:block">
+        <DesktopView />
+      </div>
     </div>
   );
 }

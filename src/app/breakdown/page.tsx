@@ -7,7 +7,6 @@ import {
   ArrowLeft, 
   TrendingUp, 
   AlertCircle, 
-  CheckCircle2, 
   Timer,
   Lightbulb,
   Fan,
@@ -20,7 +19,7 @@ import { Outfit, Inter } from "next/font/google";
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-// 2. Demo Data (Integrated directly for standalone functionality)
+// 2. Demo Data
 const breakdownData = {
   electricity: {
     total: 4500,
@@ -109,7 +108,7 @@ export default function BreakdownPage() {
                         style={{ width: `${item.percent}%` }} 
                         className={`h-full ${item.color} shadow-[0_0_15px_rgba(0,0,0,0.3)] relative group-hover/bar:brightness-110 transition-all duration-500`}
                       >
-                         <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
                       </div>
                     </div>
                   </div>
@@ -150,7 +149,7 @@ export default function BreakdownPage() {
                         style={{ width: `${item.percent}%` }} 
                         className={`h-full ${item.color} shadow-[0_0_15px_rgba(0,0,0,0.3)] relative group-hover/bar:brightness-110 transition-all duration-500`}
                       >
-                         <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
                       </div>
                     </div>
                   </div>
@@ -160,49 +159,46 @@ export default function BreakdownPage() {
           </div>
         </div>
 
-        {/* 6. AI INSIGHTS GRID (Bento Style) */}
+        {/* 6. AI INSIGHTS GRID */}
         <h2 className="text-2xl font-bold text-white mb-8 pl-2 border-l-4 border-emerald-500">AI Findings & Anomalies</h2>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
           
-          {/* Insight 1: Alert */}
+          {/* Insight Cards... (Same as your code) */}
           <div className="bg-red-950/20 border border-red-500/30 p-6 rounded-3xl hover:bg-red-900/20 transition-colors group">
             <div className="flex items-start justify-between mb-4">
                <div className="p-2 bg-red-500/20 rounded-lg text-red-400"><AlertCircle className="w-6 h-6" /></div>
                <span className="text-xs font-bold text-red-400 uppercase tracking-widest">Critical</span>
             </div>
             <p className="text-3xl font-black text-white mb-1 group-hover:scale-105 transition-transform origin-left">AC Unit</p>
-            <p className="text-white/60 text-sm">Consuming 45% of total electricity. 12% higher than neighbors.</p>
+            <p className="text-white/60 text-sm">Consuming 45% of total electricity.</p>
           </div>
 
-          {/* Insight 2: Opportunity */}
           <div className="bg-emerald-950/20 border border-emerald-500/30 p-6 rounded-3xl hover:bg-emerald-900/20 transition-colors group">
             <div className="flex items-start justify-between mb-4">
                <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400"><TrendingUp className="w-6 h-6" /></div>
                <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Opportunity</span>
             </div>
             <p className="text-3xl font-black text-white mb-1 group-hover:scale-105 transition-transform origin-left">₹420/mo</p>
-            <p className="text-white/60 text-sm">Potential savings by reducing shower time by just 2 minutes.</p>
+            <p className="text-white/60 text-sm">Potential savings by reducing shower time.</p>
           </div>
 
-          {/* Insight 3: Comparison */}
           <div className="bg-blue-950/20 border border-blue-500/30 p-6 rounded-3xl hover:bg-blue-900/20 transition-colors group">
             <div className="flex items-start justify-between mb-4">
                <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400"><TrendingUp className="w-6 h-6" /></div>
                <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Comparison</span>
             </div>
             <p className="text-3xl font-black text-white mb-1 group-hover:scale-105 transition-transform origin-left">+12%</p>
-            <p className="text-white/60 text-sm">Your usage vs. similar 3BHK homes in Raichur.</p>
+            <p className="text-white/60 text-sm">Your usage vs. similar 3BHK homes.</p>
           </div>
 
-          {/* Insight 4: Prediction */}
           <div className="bg-purple-950/20 border border-purple-500/30 p-6 rounded-3xl hover:bg-purple-900/20 transition-colors group">
             <div className="flex items-start justify-between mb-4">
                <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400"><Zap className="w-6 h-6" /></div>
                <span className="text-xs font-bold text-purple-400 uppercase tracking-widest">Projection</span>
             </div>
             <p className="text-3xl font-black text-white mb-1 group-hover:scale-105 transition-transform origin-left">₹30k/yr</p>
-            <p className="text-white/60 text-sm">Total annual savings if all recommendations are applied.</p>
+            <p className="text-white/60 text-sm">Total annual savings potential.</p>
           </div>
 
         </div>

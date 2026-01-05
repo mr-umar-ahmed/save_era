@@ -1,41 +1,40 @@
 import { NextResponse, NextRequest } from "next/server";
-import { headers } from "next/headers"; // Use headers() instead
 
-export async function middleware(request: NextRequest) {
-  // ✅ FIX: Use headers().get() - works in middleware
+export function middleware(request: NextRequest) {
+  // 1. Check for the auth cookie (Must match the name in AuthPage)
   const token = request.cookies.get("savera-auth")?.value;
-
   const { pathname } = request.nextUrl;
 
-  // PUBLIC ROUTES (no auth required)
-  const publicRoutes = ["/", "/auth", "/demo"];
+  // 2. Define Public Routes (Pages that DO NOT require login)
+  // We allow /auth so users can actually log in!
+  const publicRoutes = ["/auth"];
 
-  // If on public route → allow
-  if (publicRoutes.includes(pathname)) {
-    // If authenticated on auth page → redirect to dashboard
-    if (pathname === "/auth" && token) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    return NextResponse.next();
+  // 3. LOGIC: If user is already logged in but tries to go to Login page
+  if (token && pathname === "/auth") {
+    // Redirect them to the Dashboard automatically
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // PROTECTED ROUTES (require auth)
-  if (!token) {
-    // Not logged in → redirect to auth
+  // 4. LOGIC: If user is NOT logged in and tries to go to a restricted page (like /dashboard)
+  if (!token && !publicRoutes.includes(pathname)) {
+    // Redirect them to the Login page
     return NextResponse.redirect(new URL("/auth", request.url));
   }
 
-  // Logged in → allow access
+  // 5. If none of the above, let them pass
   return NextResponse.next();
 }
 
-// Match ALL routes except API/static
+// Configuration to prevent middleware from running on static files (images, fonts, etc.)
 export const config = {
   matcher: [
     /*
      * Match all request paths except for:
-     * - API routes (/_next/static, /favicon.ico, etc.)
-     * - Public files (_next/image, etc.)
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public images (svg, png, etc.)
      */
     "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

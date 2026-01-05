@@ -103,8 +103,9 @@ export default function ChallengesPage() {
         {/* 4. HEADER & HUD */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div className="space-y-2">
-            <Link href="/impact" className="inline-flex items-center gap-2 text-white/40 hover:text-emerald-400 transition-colors text-sm font-medium">
-              <ArrowLeft className="w-4 h-4" /> Back to Impact
+            {/* Updated Link to point to Dashboard for consistency */}
+            <Link href="/dashboard" className="inline-flex items-center gap-2 text-white/40 hover:text-emerald-400 transition-colors text-sm font-medium">
+              <ArrowLeft className="w-4 h-4" /> Back to Dashboard
             </Link>
             <h1 className="text-4xl md:text-6xl font-black font-display tracking-tight text-white">
               Mission <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">Center</span>
@@ -168,7 +169,7 @@ export default function ChallengesPage() {
                              ${challenge.color === 'cyan' ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400' : ''}
                              ${challenge.color === 'emerald' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : ''}
                              ${challenge.color === 'purple' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' : ''}
-                          `}>
+                           `}>
                             +{challenge.xp} XP
                           </span>
                         </div>
@@ -192,16 +193,16 @@ export default function ChallengesPage() {
                       </div>
 
                       <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
-                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-                           <Zap className="w-3 h-3" /> Saves {challenge.savings}
-                         </div>
-                         {challenge.status === 'locked' ? (
-                           <span className="text-xs text-white/30 font-bold uppercase">Locked</span>
-                         ) : (
-                           <button className="text-xs font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1">
-                             View Details <ChevronRight className="w-3 h-3" />
-                           </button>
-                         )}
+                          <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                            <Zap className="w-3 h-3" /> Saves {challenge.savings}
+                          </div>
+                          {challenge.status === 'locked' ? (
+                            <span className="text-xs text-white/30 font-bold uppercase">Locked</span>
+                          ) : (
+                            <button className="text-xs font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1">
+                              View Details <ChevronRight className="w-3 h-3" />
+                            </button>
+                          )}
                       </div>
                     </div>
                   </div>
