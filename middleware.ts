@@ -6,8 +6,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 2. Define Public Routes (Pages that DO NOT require login)
-  // We allow /auth so users can actually log in!
-  const publicRoutes = ["/auth"];
+  // FIX: Added "/" to this array so the Landing Page is accessible
+  const publicRoutes = ["/auth", "/"];
 
   // 3. LOGIC: If user is already logged in but tries to go to Login page
   if (token && pathname === "/auth") {
