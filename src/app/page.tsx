@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
   ArrowRight, Leaf, ShieldAlert, Zap, Home, Building2, 
   Radio, CloudLightning, Globe2, Lock, 
   ScanLine, BarChart3, Wifi, Battery, Fingerprint, Loader2,
-  LayoutGrid // <--- Fixed: Added this import
+  LayoutGrid, ChevronDown, CheckCircle2, Menu, X
 } from "lucide-react";
 import { Outfit, Inter } from "next/font/google";
 import { 
@@ -16,7 +16,8 @@ import {
   useScroll, 
   useTransform, 
   PanInfo,
-  useMotionValue
+  useSpring,
+  useInView
 } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -34,7 +35,56 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // ==============================================================================
-// COMPONENT 1: MOBILE VIEW
+// SHARED UI COMPONENTS
+// ==============================================================================
+
+// Spotlight Effect Card for Desktop
+const SpotlightCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
+  const divRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [opacity, setOpacity] = useState(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return;
+    const rect = divRef.current.getBoundingClientRect();
+    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setOpacity(1)}
+      onMouseLeave={() => setOpacity(0)}
+      className={cn("relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0A0F0D] group", className)}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100"
+        style={{
+          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(16, 185, 129, 0.15), transparent 40%)`,
+        }}
+      />
+      <div className="relative h-full">{children}</div>
+    </div>
+  );
+};
+
+// Animated Counter for Desktop Stats
+const Counter = ({ value }: { value: number }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref);
+  const springValue = useSpring(0, { bounce: 0, duration: 2000 });
+  const displayValue = useTransform(springValue, (latest) => Math.floor(latest));
+
+  useEffect(() => {
+    if (isInView) springValue.set(value);
+  }, [isInView, value, springValue]);
+
+  return <motion.span ref={ref}>{displayValue}</motion.span>;
+};
+
+// ==============================================================================
+// MOBILE VIEW COMPONENT (App-like Onboarding)
 // ==============================================================================
 
 function MobileView() {
@@ -81,7 +131,7 @@ function MobileView() {
     }
   ];
 
-// Gesture Handler for Swiping
+  // Gesture Handler for Swiping
   const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
     const swipeConfidenceThreshold = 10000;
     const swipePower = Math.abs(offset.x) * velocity.x;
@@ -94,6 +144,7 @@ function MobileView() {
       setStep(step - 1);
     }
   };
+  
   const currentSlide = slides[Math.min(step, 3)];
 
   return (
@@ -102,7 +153,7 @@ function MobileView() {
       {/* Dynamic Background Glow */}
       <motion.div 
         animate={{ backgroundColor: step === 0 ? '#064e3b' : step === 1 ? '#78350f' : step === 2 ? '#1e3a8a' : step === 3 ? '#881337' : '#000' }}
-        className="absolute -top-[20%] -left-[20%] w-[140%] h-[60%] blur-[120px] opacity-40 transition-colors duration-700"
+        className="absolute -top-[20%] -left-[20%] w-[140%] h-[60%] blur-[120px] opacity-40 transition-colors duration-700 pointer-events-none"
       />
 
       {/* Header / Progress */}
@@ -178,7 +229,7 @@ function MobileView() {
               </div>
             </motion.div>
           ) : (
-            // 3. ROLE SELECTION SCREEN (Replaces Auth)
+            // 3. ROLE SELECTION SCREEN
             <RoleSelectionStep key="roles" />
           )}
         </AnimatePresence>
@@ -200,7 +251,7 @@ function MobileView() {
 }
 
 // ----------------------------------------------------------------------
-// Sub-Component: Role Selection (Interactive)
+// Sub-Component: Role Selection
 // ----------------------------------------------------------------------
 function RoleSelectionStep() {
   const router = useRouter();
@@ -208,7 +259,6 @@ function RoleSelectionStep() {
 
   const handleSelect = (roleId: string) => {
     setSelected(roleId);
-    // Simulate short delay for animation, then redirect
     setTimeout(() => {
       router.push("/auth");
     }, 600);
@@ -262,7 +312,6 @@ function RoleSelectionStep() {
                 : "bg-[#0A0F0D] border-white/10 text-white hover:border-emerald-500/50 hover:bg-emerald-900/10 active:scale-95"
               }`}
           >
-             {/* Loading Spinner Overlay */}
              {selected === role.id && (
                <motion.div 
                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -293,13 +342,6 @@ function RoleSelectionStep() {
           </motion.button>
         ))}
       </div>
-      
-      {/* Bottom Brand Mark */}
-      <div className="mt-auto pb-8">
-        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/20 font-display font-bold">
-           N
-        </div>
-      </div>
     </motion.div>
   );
 }
@@ -314,7 +356,7 @@ function MobileWidget({ step }: { step: number }) {
   const is3 = step === 3;
 
   return (
-    <div className="w-full aspect-square max-w-[320px] bg-white/[0.03] border border-white/10 rounded-[2rem] relative overflow-hidden flex items-center justify-center shadow-2xl">
+    <div className="w-full aspect-square max-w-[320px] bg-white/[0.03] border border-white/10 rounded-[2rem] relative overflow-hidden flex items-center justify-center shadow-2xl backdrop-blur-sm">
        {/* Background Grid */}
        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}/>
 
@@ -408,44 +450,294 @@ function MobileWidget({ step }: { step: number }) {
 
 
 // ==============================================================================
-// COMPONENT 2: DESKTOP VIEW
+// DESKTOP VIEW COMPONENT (SaaS Landing Page)
 // ==============================================================================
 
 function DesktopView() {
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
   const y = useTransform(scrollY, [0, 300], [0, 100]);
+  const navBackground = useTransform(scrollY, [0, 50], ["rgba(5, 11, 8, 0)", "rgba(5, 11, 8, 0.8)"]);
 
   return (
     <div className="min-h-screen bg-[#050B08] text-white font-sans selection:bg-emerald-500/30 overflow-x-hidden">
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center py-6 px-4 backdrop-blur-md transition-all border-b border-white/5">
+      
+      {/* Dynamic Nav */}
+      <motion.nav style={{ backgroundColor: navBackground }} className="fixed top-0 left-0 right-0 z-50 flex justify-center py-6 px-4 backdrop-blur-md transition-all border-b border-transparent">
         <div className="w-full max-w-7xl flex justify-between items-center px-4">
           <div className="flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-emerald-400" />
+            <div className="bg-emerald-500/10 p-2 rounded-lg">
+              <Leaf className="w-5 h-5 text-emerald-400" />
+            </div>
             <span className="font-display font-bold tracking-wide text-xl">SAVERA</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/60">
-             <Link href="#ecosystem" className="hover:text-white transition-colors">Ecosystem</Link>
-             <Link href="#emergency" className="hover:text-white transition-colors">Emergency</Link>
+            <a href="#ecosystem" className="hover:text-emerald-400 transition-colors">Ecosystem</a>
+            <a href="#emergency" className="hover:text-emerald-400 transition-colors">Emergency</a>
+            <a href="#tech" className="hover:text-emerald-400 transition-colors">Azure AI</a>
           </div>
-          <Link href="/auth" className="bg-white text-black px-6 py-2 rounded-full text-sm font-bold hover:bg-emerald-400 transition-colors">Login</Link>
+          <Link href="/auth" className="bg-white text-black px-6 py-2 rounded-full text-sm font-bold hover:bg-emerald-400 transition-colors shadow-lg shadow-white/10">
+            Login
+          </Link>
         </div>
-      </nav>
+      </motion.nav>
 
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-20">
-         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:60px_60px] opacity-20" />
-         <motion.div style={{ opacity, y }} className="relative z-10 text-center px-4 max-w-5xl mx-auto space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-md mb-4">
-               <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"/>
-               <span className="text-xs font-bold text-emerald-100 uppercase tracking-widest">Protocol Live</span>
+      {/* Hero Section */}
+      <section className="relative min-h-[110vh] flex flex-col items-center justify-center overflow-hidden pt-20">
+        {/* Animated Background Mesh */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[20%] left-[10%] w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[120px] animate-pulse mix-blend-screen" />
+          <div className="absolute bottom-[20%] right-[10%] w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] mix-blend-screen" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:60px_60px] opacity-20 mask-image:radial-gradient(ellipse_at_center,black,transparent)" />
+        </div>
+
+        <motion.div style={{ opacity, y }} className="relative z-10 text-center px-4 max-w-5xl mx-auto space-y-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-md mb-4"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-bold text-emerald-100 uppercase tracking-widest">Microsoft Imagine Cup Aligned</span>
+          </motion.div>
+
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-6xl md:text-8xl lg:text-9xl font-black font-display tracking-tighter leading-[0.9] bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40"
+          >
+            Energy Intel <br /> For Everyone.
+          </motion.h1>
+          
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-xl md:text-2xl text-white/60 max-w-2xl mx-auto font-light leading-relaxed"
+          >
+            Savera connects household consumption, community efficiency, and government planning into one unified <span className="text-emerald-400 font-normal">sustainable protocol</span>.
+          </motion.p>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="pt-8 flex flex-col md:flex-row gap-6 justify-center items-center"
+          >
+            <Link 
+              href="/auth" 
+              className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:scale-105 hover:shadow-[0_0_40px_-5px_rgba(255,255,255,0.4)] transition-all duration-300"
+            >
+              <span>Initialize Protocol</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </motion.div>
+        </motion.div>
+
+        <motion.div style={{ opacity }} className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce text-white/20">
+          <ChevronDown className="w-8 h-8" />
+        </motion.div>
+      </section>
+
+      {/* Ecosystem Section (Bento Grid) */}
+      <section id="ecosystem" className="relative z-10 py-32 px-4 md:px-8 max-w-7xl mx-auto">
+        <div className="mb-20 text-center">
+          <h2 className="text-sm font-bold text-emerald-500 uppercase tracking-widest mb-4">The Ecosystem</h2>
+          <h3 className="text-4xl md:text-6xl font-black font-display text-white mb-6">Unified Intelligence</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[400px]">
+          
+          {/* Household Card */}
+          <SpotlightCard className="md:col-span-2 p-10 flex flex-col justify-between">
+            <div className="absolute top-0 right-0 p-12 opacity-10">
+                <Home className="w-48 h-48 text-emerald-500 transform translate-x-12 -translate-y-12" />
             </div>
-            <h1 className="text-6xl md:text-9xl font-black font-display tracking-tighter leading-[0.9] bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
-               Energy Intel <br /> For Everyone.
-            </h1>
-            <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-               The unified sustainable protocol for households, communities, and governance.
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-8 ring-1 ring-emerald-500/40">
+                <Zap className="w-7 h-7 text-emerald-400" />
+              </div>
+              <h4 className="text-3xl font-bold font-display mb-4">Household & Individual</h4>
+              <p className="text-white/50 mb-8 max-w-lg leading-relaxed text-lg">
+                We analyze utility billing data to estimate energy and water usage across appliances, helping you identify inefficiencies.
+              </p>
+              <div className="flex gap-3 flex-wrap">
+                {['Appliance Breakdown', 'Carbon Tracking', 'Bill Forecasting'].map((tag) => (
+                  <span key={tag} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-emerald-200/80">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </SpotlightCard>
+
+          {/* Community Card */}
+          <SpotlightCard className="p-10 flex flex-col">
+            <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-8 ring-1 ring-blue-500/40">
+              <Building2 className="w-7 h-7 text-blue-400" />
+            </div>
+            <h4 className="text-2xl font-bold font-display mb-2">Communities</h4>
+            <p className="text-white/50 text-sm leading-relaxed mb-auto">
+              Automate efficiency in shared spaces like schools and offices.
             </p>
-         </motion.div>
+            <div className="bg-blue-500/10 rounded-2xl p-6 border border-blue-500/20 mt-6 text-center">
+              <div className="text-xs text-blue-300 font-mono mb-1 uppercase tracking-wider">Optimization</div>
+              <div className="text-5xl font-black text-white flex justify-center items-baseline">
+                <Counter value={94} /><span className="text-xl text-white/40">%</span>
+              </div>
+            </div>
+          </SpotlightCard>
+
+          {/* Government Card */}
+          <SpotlightCard className="md:col-span-3 p-10 flex flex-col md:flex-row items-center gap-12 bg-gradient-to-r from-[#0A0F0D] to-[#120a05]">
+             <div className="flex-1">
+              <div className="w-14 h-14 bg-amber-500/20 rounded-2xl flex items-center justify-center mb-8 ring-1 ring-amber-500/40">
+                <Globe2 className="w-7 h-7 text-amber-400" />
+              </div>
+              <h4 className="text-3xl font-bold font-display mb-4">Grid & Governance</h4>
+              <p className="text-white/50 leading-relaxed text-lg max-w-xl">
+                Aggregation enables authorities to understand regional demand patterns and peak-load stress, supporting infrastructure planning during scarcity.
+              </p>
+            </div>
+            <div className="flex-1 w-full h-full min-h-[200px] bg-black/40 rounded-3xl border border-white/5 p-6 backdrop-blur-sm flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-xs font-mono text-amber-500 flex items-center gap-2">
+                   <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"/> LIVE LOAD
+                </span>
+                <span className="text-xs text-white/30 font-mono">KARNATAKA REGION</span>
+              </div>
+              <div className="flex-1 flex items-end gap-2 px-2">
+                 {[30, 50, 45, 60, 80, 55, 40, 70, 90, 60, 40, 50].map((h, i) => (
+                   <motion.div 
+                    key={i}
+                    initial={{ height: "10%" }}
+                    whileInView={{ height: `${h}%` }}
+                    transition={{ delay: i * 0.05, duration: 0.5 }}
+                    className="flex-1 bg-gradient-to-t from-amber-900/40 to-amber-500 rounded-t-sm"
+                   />
+                 ))}
+              </div>
+            </div>
+          </SpotlightCard>
+        </div>
+      </section>
+
+      {/* Emergency Section */}
+      <section id="emergency" className="relative py-32 border-t border-white/5 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050B08] via-[#1a0505] to-[#050B08]" />
+        
+        {/* Radar Effect Background */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-red-500/10 rounded-full opacity-50 pointer-events-none">
+           <div className="w-full h-full rounded-full animate-[spin_10s_linear_infinite] border-t border-red-500/30 bg-gradient-to-tr from-transparent to-red-900/5" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10 flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1 space-y-8">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="inline-flex items-center gap-2 text-red-400 border border-red-500/30 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-950/30 shadow-[0_0_20px_-5px_rgba(220,38,38,0.4)]"
+            >
+              <Radio className="w-3 h-3 animate-pulse" />
+              Crisis Protocol Active
+            </motion.div>
+            <h2 className="text-5xl md:text-7xl font-black font-display leading-[0.9]">
+              Lifeline when <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-600">Grid Fails.</span>
+            </h2>
+            <p className="text-white/60 text-lg leading-relaxed max-w-lg">
+              During extreme weather, Savera transforms into a critical communication channel. It delivers verified, location-specific alerts via low-bandwidth protocols (2G/SMS).
+            </p>
+          </div>
+
+          {/* Interactive Phone Mockup */}
+          <div className="flex-1 flex justify-center">
+            <motion.div 
+               initial={{ y: 50, opacity: 0 }}
+               whileInView={{ y: 0, opacity: 1 }}
+               viewport={{ once: true }}
+               className="w-[320px] bg-[#0A0A0A] border border-white/10 rounded-[3rem] p-4 shadow-2xl relative"
+            >
+               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl border-b border-l border-r border-white/10 z-20" />
+               <div className="h-full bg-[#111] rounded-[2.5rem] overflow-hidden relative min-h-[600px]">
+                 {/* Map Background */}
+                 <div className="absolute inset-0 bg-neutral-900 opacity-50 grayscale" style={{ backgroundImage: 'radial-gradient(circle, #333 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                 
+                 {/* Notification Pop */}
+                 <motion.div 
+                  animate={{ y: [20, 0], opacity: [0, 1] }}
+                  transition={{ delay: 0.5, type: 'spring' }}
+                  className="absolute bottom-6 left-4 right-4 bg-red-500/10 border border-red-500/40 backdrop-blur-xl p-4 rounded-2xl"
+                 >
+                    <div className="flex gap-3">
+                      <div className="bg-red-500 text-white p-2 rounded-lg h-fit">
+                        <ShieldAlert className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h5 className="text-red-100 font-bold text-sm">Flash Flood Warning</h5>
+                        <p className="text-red-200/60 text-xs mt-1">Grid shutdown in 10m. Switch to battery.</p>
+                      </div>
+                    </div>
+                 </motion.div>
+               </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Azure Tech Stack (Grid) */}
+      <section id="tech" className="py-32 bg-[#050B08] border-t border-white/5 relative">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold font-display mb-16 text-white/40">Powered by Enterprise Infrastructure</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: <CloudLightning />, title: "Azure Cognitive", desc: "Processing billing data at national scale." },
+              { icon: <Globe2 />, title: "Regional Awareness", desc: "Modular configs for local utility policies." },
+              { icon: <Lock />, title: "Entra ID Security", desc: "Enterprise-grade identity & privacy." }
+            ].map((item, i) => (
+              <motion.div 
+                key={i}
+                whileHover={{ y: -5 }}
+                className="p-8 border border-white/5 rounded-3xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors relative group"
+              >
+                 <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+                 <div className="w-12 h-12 bg-[#0A0F0D] rounded-xl border border-white/10 flex items-center justify-center mx-auto mb-6 relative z-10 text-blue-400">
+                   {item.icon}
+                 </div>
+                 <h3 className="text-xl font-bold mb-2 relative z-10">{item.title}</h3>
+                 <p className="text-white/40 text-sm relative z-10">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer / CTA */}
+      <section className="py-32 relative overflow-hidden flex flex-col items-center">
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 to-transparent pointer-events-none" />
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          className="relative z-10 text-center px-4"
+        >
+          <h2 className="text-5xl md:text-8xl font-black font-display mb-8 tracking-tight">
+            Ready to Optimize?
+          </h2>
+          <div className="p-[2px] rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-emerald-500 inline-block">
+            <Link 
+              href="/auth" 
+              className="block px-12 py-5 bg-[#050B08] rounded-full text-xl font-bold text-white hover:bg-white hover:text-black transition-colors"
+            >
+              Get Started
+            </Link>
+          </div>
+        </motion.div>
+
+        <div className="mt-24 text-white/20 text-sm">© 2026 Savera Protocol. Microsoft Imagine Cup.</div>
       </section>
     </div>
   );
@@ -456,7 +748,7 @@ function DesktopView() {
 // ==============================================================================
 export default function SaveraLanding() {
   return (
-    <div className={`${outfit.variable} ${inter.variable} font-sans antialiased bg-black`}>
+    <div className={`${outfit.variable} ${inter.variable} font-sans antialiased bg-[#050B08]`}>
       <div className="block md:hidden">
         <MobileView />
       </div>

@@ -12,9 +12,8 @@ import {
   Share2, 
   Download,
   ChevronRight,
-  TrendingUp,
   Leaf,
-  Waves // <--- FIXED: Added this import
+  Waves
 } from "lucide-react";
 import { Outfit, Inter } from "next/font/google";
 
@@ -188,11 +187,11 @@ export default function ImpactPage() {
               { label: "Eco Warrior", icon: Trophy, color: "purple", date: "Locked", locked: true },
             ].map((item, i) => (
               <div key={i} className={`p-4 rounded-2xl border flex items-center gap-4 transition-all
-                 ${item.locked 
-                   ? 'bg-white/5 border-white/5 opacity-50' 
-                   : 'bg-white/5 border-white/10 hover:bg-white/10'
-                 }
-              `}>
+                  ${item.locked 
+                    ? 'bg-white/5 border-white/5 opacity-50' 
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }
+               `}>
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center 
                   ${item.locked ? 'bg-white/10 text-white/30' : `bg-${item.color}-500/20 text-${item.color}-400`}
                 `}>
@@ -207,21 +206,14 @@ export default function ImpactPage() {
           </div>
         </div>
 
-        {/* 7. FOOTER ACTIONS */}
-        <div className="flex flex-col md:flex-row gap-4 justify-center">
+        {/* 7. FOOTER ACTION */}
+        <div className="flex justify-center">
           <Link
             href="/challenges"
-            className="group relative inline-flex items-center justify-center gap-3 bg-white text-[#050B08] px-8 py-4 rounded-2xl text-lg font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="group relative inline-flex items-center justify-center gap-3 bg-white text-[#050B08] px-10 py-4 rounded-full text-lg font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
              <Trophy className="w-5 h-5" />
              <span>Join Weekly Challenges</span>
-          </Link>
-
-          <Link
-            href="/gov-admin"
-            className="group relative inline-flex items-center justify-center gap-3 bg-white/5 text-white border border-white/10 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-             <span>View Government Portal</span>
              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>

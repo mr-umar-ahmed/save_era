@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
+import Navbar from "./components/Navbar"; // Import your persistent Navbar component
 
 // 1. Setup Global Fonts
 const outfit = Outfit({
@@ -92,7 +93,13 @@ export default function RootLayout({
           html { scroll-behavior: smooth; }
         `}</style>
         
-        {children}
+        {/* Persistent Navbar across all pages */}
+        <Navbar />
+        
+        {/* Main content area with padding to prevent being hidden by the fixed Navbar */}
+        <main className="pt-16 relative z-0">
+          {children}
+        </main>
       </body>
     </html>
   );
