@@ -1,25 +1,26 @@
 'use client';
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Changed from Link to useRouter
+import { useRouter } from "next/navigation";
 import { 
   Mail, 
   Smartphone, 
   ArrowRight, 
   Leaf, 
-  MapPin,
-  Globe,
-  Building2,
-  User,
-  ShieldCheck,
-  KeyRound,
-  Fingerprint,
-  Lock,
-  Loader2 // Added loading icon
+  MapPin, 
+  Map,
+  Building2, 
+  User, 
+  ShieldCheck, 
+  KeyRound, 
+  Lock, 
+  Loader2,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Outfit, Inter } from "next/font/google";
+import { useTheme } from "../components/ThemeProvider";
 
-// 1. Setup Premium Fonts
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -27,118 +28,225 @@ export default function AuthPage() {
   const router = useRouter();
   const [userType, setUserType] = useState<'resident' | 'official'>('resident');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Official State
+  const [department, setDepartment] = useState('gescom');
 
-  // 👇 THE FIX: A real login function that sets the cookie
-  const handleLogin = async (destination: string) => {
+  // Resident State
+  const [residentName, setResidentName] = useState("");
+  const [residentEmail, setResidentEmail] = useState("");
+  const [residentCity, setResidentCity] = useState("Raichur, KA");
+  const [residentZone, setResidentZone] = useState("");
+  
+  const { theme, colors } = useTheme(); 
+
+  const handleLogin = async (baseDestination: string) => {
     setIsLoading(true);
-    
-    // 1. Set the cookie so Middleware lets us pass
-    // (In a real app, this happens after verifying the password with an API)
     document.cookie = "savera-auth=true; path=/; max-age=86400; SameSite=Lax";
+    
+    // If official, append the department query parameter so the dashboard can adapt
+    const finalDestination = userType === 'official' 
+      ? `${baseDestination}?dept=${department}` 
+      : baseDestination;
 
-    // 2. Wait a tiny bit to ensure cookie is set, then navigate
     setTimeout(() => {
-      router.push(destination);
-      router.refresh(); // Force Next.js to re-check cookies
-    }, 800);
+      router.push(finalDestination);
+      router.refresh(); 
+    }, 1500); 
   };
 
+  // Basic validation to enable the resident button
+  const isResidentValid = residentName.trim() !== "" && residentEmail.trim() !== "" && residentZone.trim() !== "";
+
   return (
-    <div className={`${outfit.variable} ${inter.variable} min-h-screen bg-[#050B08] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-emerald-500/30 text-white`}>
+    <div className={`${outfit.variable} ${inter.variable} min-h-[calc(100vh-64px)] ${colors.bg} ${colors.text} flex items-center justify-center p-4 relative overflow-hidden font-sans transition-colors duration-300`}>
       
-      {/* 2. BACKGROUND FX */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className={`absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] transition-colors duration-700 ease-in-out ${userType === 'resident' ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`} />
-        <div className={`absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full blur-[100px] transition-colors duration-700 ease-in-out ${userType === 'resident' ? 'bg-teal-500/10' : 'bg-indigo-500/10'}`} />
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] brightness-100 contrast-150 mix-blend-overlay"></div>
+      {/* DYNAMIC BACKGROUND FX */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className={`absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] transition-colors duration-1000 ease-in-out 
+          ${userType === 'resident' 
+            ? (theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-200/60') 
+            : (theme === 'dark' ? 'bg-blue-600/20' : 'bg-blue-200/60')}`} 
+        />
+        <div className={`absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full blur-[100px] transition-colors duration-1000 ease-in-out 
+          ${userType === 'resident' 
+            ? (theme === 'dark' ? 'bg-teal-500/10' : 'bg-teal-200/60') 
+            : (theme === 'dark' ? 'bg-indigo-500/10' : 'bg-indigo-200/60')}`} 
+        />
       </div>
 
-      {/* 3. MAIN AUTH CARD */}
-      <div className="relative z-10 w-full max-w-[440px]">
+      <div className="relative z-10 w-full max-w-[440px] py-12">
         
-        {/* Role Toggle Switch */}
-        <div className="relative z-20 mb-6 bg-white/5 backdrop-blur-md border border-white/10 p-1 rounded-2xl flex">
-           <div className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white/10 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${userType === 'resident' ? 'left-1' : 'left-[calc(50%+4px)]'}`} />
+        {/* ROLE SWITCHER */}
+        <div className={`relative z-20 mb-6 backdrop-blur-md border p-1 rounded-2xl flex transition-colors duration-300
+          ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}>
            
-           <button onClick={() => setUserType('resident')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all relative z-10 ${userType === 'resident' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}>
+           <div className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl shadow-sm transition-all duration-300 ease-out 
+             ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-100'}
+             ${userType === 'resident' ? 'left-1' : 'left-[calc(50%+4px)]'}`} 
+           />
+           
+           <button 
+             onClick={() => setUserType('resident')} 
+             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all relative z-10 
+             ${userType === 'resident' 
+                ? (theme === 'dark' ? 'text-white' : 'text-gray-900') 
+                : colors.textMuted}`}
+           >
              <User className="w-4 h-4" /> Resident
            </button>
-           <button onClick={() => setUserType('official')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all relative z-10 ${userType === 'official' ? 'text-blue-200' : 'text-white/40 hover:text-white/70'}`}>
+           
+           <button 
+             onClick={() => setUserType('official')} 
+             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all relative z-10 
+             ${userType === 'official' 
+                ? (theme === 'dark' ? 'text-blue-200' : 'text-blue-600') 
+                : colors.textMuted}`}
+           >
              <Building2 className="w-4 h-4" /> Official
            </button>
         </div>
 
-        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-2xl relative overflow-hidden transition-all duration-500">
+        {/* MAIN CARD */}
+        <div className={`backdrop-blur-2xl border rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden transition-all duration-500 shadow-2xl ${colors.cardBg}`}>
           
-          {/* Header Section */}
           <div className="relative z-10 text-center mb-10">
-            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br shadow-[0_0_25px_rgba(255,255,255,0.1)] mb-6 transition-all duration-500
-              ${userType === 'resident' ? 'from-emerald-500 to-teal-600 shadow-emerald-500/20' : 'from-blue-600 to-indigo-600 shadow-blue-500/20'}
+            <div className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br shadow-[0_0_40px_-10px_rgba(0,0,0,0.3)] mb-6 transition-all duration-500
+              ${userType === 'resident' 
+                ? 'from-emerald-500 to-teal-600 shadow-emerald-500/20' 
+                : 'from-blue-600 to-indigo-600 shadow-blue-500/20'}
             `}>
               {userType === 'resident' ? (
-                <Leaf className="w-8 h-8 text-white fill-white/20" />
+                <Leaf className="w-10 h-10 text-white fill-white/20" />
               ) : (
-                <ShieldCheck className="w-8 h-8 text-white fill-white/20" />
+                <ShieldCheck className="w-10 h-10 text-white fill-white/20" />
               )}
             </div>
-            <h1 className="text-3xl font-black font-display text-white tracking-tight mb-2">
-              {userType === 'resident' ? 'Welcome Home' : 'Gov Portal'}
+            
+            <h1 className="text-3xl font-black font-display tracking-tight mb-2">
+              {userType === 'resident' ? 'Create Profile' : 'Gov Portal'}
             </h1>
-            <p className="text-white/50 text-sm md:text-base font-light">
-              {userType === 'resident' ? 'Join 45,000+ households saving energy.' : 'Restricted access for MESCOM & RUWSS.'}
+            <p className={`text-sm font-medium ${colors.textMuted}`}>
+              {userType === 'resident' ? 'Map your location to your local utility grid.' : 'Restricted access for Nodal Officers.'}
             </p>
           </div>
 
-          {/* === RESIDENT FORM === */}
+          {/* === RESIDENT LOGIN === */}
           {userType === 'resident' && (
-            <div className="space-y-4 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <button className="w-full bg-white text-[#050B08] py-4 px-6 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group">
-                <img src="https://img.icons8.com/color/48/000000/google-logo.png" className="w-5 h-5" alt="Google" />
-                <span>Continue with Google</span>
-              </button>
+            <div className="space-y-4 relative z-10 animate-in fade-in slide-in-from-left-4 duration-500">
+              
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <button className={`py-3 px-4 rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group border
+                  ${theme === 'dark' ? 'bg-white text-[#050B08] border-white hover:bg-emerald-50' : 'bg-white text-gray-800 border-gray-200 hover:border-emerald-200 shadow-sm'}`}>
+                  <div className="w-4 h-4 relative flex items-center justify-center font-black">G</div>
+                  <span className="text-xs">Google</span>
+                </button>
 
-              <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white py-4 px-6 rounded-2xl font-bold transition-all flex items-center justify-center gap-3">
-                <Smartphone className="w-5 h-5 text-emerald-400" />
-                <span>Continue with Phone</span>
-              </button>
+                <button className={`border py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2
+                  ${theme === 'dark' 
+                    ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white' 
+                    : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'}`}>
+                  <Smartphone className="w-4 h-4 text-emerald-500" />
+                  <span className="text-xs">Phone</span>
+                </button>
+              </div>
 
               <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-                <div className="relative flex justify-center"><span className="bg-[#0b1210] px-4 text-xs text-white/40 uppercase tracking-widest">Or</span></div>
-              </div>
-
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-white/40 group-focus-within:text-emerald-400 transition-colors" />
+                <div className="absolute inset-0 flex items-center">
+                    <div className={`w-full border-t ${colors.border}`}></div>
                 </div>
-                <input type="email" placeholder="Enter email address" className="w-full pl-12 pr-4 py-4 bg-black/30 rounded-2xl border border-white/10 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 text-white transition-all outline-none placeholder:text-white/20" />
-              </div>
-
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Globe className="h-5 w-5 text-white/40 group-focus-within:text-emerald-400 transition-colors" />
+                <div className="relative flex justify-center">
+                    <span className={`px-4 text-xs uppercase tracking-widest font-bold ${theme === 'dark' ? 'bg-[#0b1210] text-white/30' : 'bg-white text-gray-400'}`}>Or Register Manually</span>
                 </div>
-                <select className="w-full pl-12 pr-10 py-4 bg-black/30 rounded-2xl border border-white/10 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 text-white/90 appearance-none outline-none cursor-pointer">
-                  <option className="bg-[#050B08]">🇮🇳 India - Raichur</option>
-                  <option className="bg-[#050B08]">🇮🇳 India - Bangalore</option>
-                  <option className="bg-[#050B08]">🇺🇸 USA - California</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><MapPin className="h-4 w-4 text-white/40" /></div>
               </div>
 
-              {/* 👇 FIXED BUTTON: Uses handleLogin instead of Link */}
-              <div className="mt-6">
+              <div className="space-y-4">
+                {/* Name */}
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className={`h-5 w-5 group-focus-within:text-emerald-500 transition-colors ${colors.textMuted}`} />
+                  </div>
+                  <input 
+                    type="text" 
+                    value={residentName}
+                    onChange={(e) => setResidentName(e.target.value)}
+                    placeholder="Full Name" 
+                    className={`w-full pl-12 pr-4 py-4 rounded-2xl border focus:ring-4 transition-all outline-none 
+                      ${theme === 'dark' ? 'bg-black/30 border-white/10 focus:border-emerald-500/50 focus:ring-emerald-500/10 placeholder-white/20 text-white' : 'bg-gray-50 border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 placeholder-gray-400 text-gray-900'}
+                    `} 
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className={`h-5 w-5 group-focus-within:text-emerald-500 transition-colors ${colors.textMuted}`} />
+                  </div>
+                  <input 
+                    type="email" 
+                    value={residentEmail}
+                    onChange={(e) => setResidentEmail(e.target.value)}
+                    placeholder="Email Address" 
+                    className={`w-full pl-12 pr-4 py-4 rounded-2xl border focus:ring-4 transition-all outline-none 
+                      ${theme === 'dark' ? 'bg-black/30 border-white/10 focus:border-emerald-500/50 focus:ring-emerald-500/10 placeholder-white/20 text-white' : 'bg-gray-50 border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 placeholder-gray-400 text-gray-900'}
+                    `} 
+                  />
+                </div>
+
+                {/* Grid Location Info */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <MapPin className={`h-4 w-4 group-focus-within:text-emerald-500 transition-colors ${colors.textMuted}`} />
+                    </div>
+                    <select 
+                      value={residentCity}
+                      onChange={(e) => setResidentCity(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-4 rounded-2xl border focus:ring-4 transition-all outline-none appearance-none text-sm cursor-pointer
+                        ${theme === 'dark' ? 'bg-black/30 border-white/10 focus:border-emerald-500/50 focus:ring-emerald-500/10 text-white' : 'bg-gray-50 border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 text-gray-900'}
+                      `}
+                    >
+                      <option value="Raichur, KA">Raichur, KA</option>
+                      <option value="Bangalore, KA">Bangalore, KA</option>
+                      <option value="Mysuru, KA">Mysuru, KA</option>
+                      <option value="Hubli, KA">Hubli, KA</option>
+                    </select>
+                  </div>
+
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Map className={`h-4 w-4 group-focus-within:text-emerald-500 transition-colors ${colors.textMuted}`} />
+                    </div>
+                    <input 
+                      type="text" 
+                      value={residentZone}
+                      onChange={(e) => setResidentZone(e.target.value)}
+                      placeholder="Sector / Ward" 
+                      className={`w-full pl-10 pr-4 py-4 rounded-2xl border focus:ring-4 transition-all outline-none text-sm
+                        ${theme === 'dark' ? 'bg-black/30 border-white/10 focus:border-emerald-500/50 focus:ring-emerald-500/10 placeholder-white/20 text-white' : 'bg-gray-50 border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 placeholder-gray-400 text-gray-900'}
+                      `} 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8">
                 <button 
                   onClick={() => handleLogin('/household-setup')}
-                  disabled={isLoading}
-                  className="group w-full flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-[#050B08] py-4 px-8 rounded-2xl text-lg font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={isLoading || !isResidentValid}
+                  className={`group w-full flex items-center justify-center gap-3 py-4 px-8 rounded-2xl text-lg font-bold transition-all 
+                    ${isResidentValid 
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:scale-[1.02] active:scale-[0.98]' 
+                      : (theme === 'dark' ? 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed')
+                    }`}
                 >
                   {isLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      <span>Start Saving</span>
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      <span>Initialize Grid Node</span>
+                      <ArrowRight className={`w-5 h-5 ${isResidentValid ? 'group-hover:translate-x-1 transition-transform' : ''}`} />
                     </>
                   )}
                 </button>
@@ -146,52 +254,77 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* === OFFICIAL FORM === */}
+          {/* === OFFICIAL LOGIN === */}
           {userType === 'official' && (
             <div className="space-y-4 relative z-10 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start mb-2">
-                <Lock className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-blue-200/80 leading-relaxed">Access requires Level 4 security clearance. All actions are logged and audited.</p>
+              
+              <div className={`p-4 rounded-2xl flex gap-3 items-start mb-2 border
+                ${theme === 'dark' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+                <Lock className={`w-5 h-5 mt-0.5 shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                <div>
+                    <h4 className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>Secure Environment</h4>
+                    <p className={`text-xs leading-relaxed ${theme === 'dark' ? 'text-blue-200/70' : 'text-blue-600/80'}`}>
+                        Access requires Level 4 security clearance. Select your jurisdiction.
+                    </p>
+                </div>
+              </div>
+
+              {/* Department Selector */}
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Building2 className={`h-5 w-5 group-focus-within:text-blue-500 transition-colors ${colors.textMuted}`} />
+                </div>
+                <select 
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className={`w-full pl-12 pr-10 py-4 rounded-2xl border focus:ring-4 appearance-none outline-none cursor-pointer transition-all font-bold
+                  ${theme === 'dark' ? 'bg-black/30 border-white/10 focus:border-blue-500/50 focus:ring-blue-500/10 text-white' : 'bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-100 text-gray-900'}`}
+                >
+                  <option value="gescom">⚡ GESCOM (Energy & Power)</option>
+                  <option value="kuwsdb">💧 KUWSDB (Water Supply)</option>
+                  <option value="ddma">🛡️ DDMA (Disaster Mgmt)</option>
+                </select>
               </div>
 
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Building2 className="h-5 w-5 text-white/40 group-focus-within:text-blue-400 transition-colors" />
+                  <User className={`h-5 w-5 group-focus-within:text-blue-500 transition-colors ${colors.textMuted}`} />
                 </div>
-                <input type="text" placeholder="Department ID" className="w-full pl-12 pr-4 py-4 bg-black/30 backdrop-blur-sm rounded-2xl border border-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 text-white placeholder-white/30 transition-all outline-none font-mono" />
+                <input 
+                  type="text" 
+                  placeholder="Officer ID (e.g. KA-8821)" 
+                  className={`w-full pl-12 pr-4 py-4 rounded-2xl border focus:ring-4 transition-all outline-none font-mono
+                  ${theme === 'dark' ? 'bg-black/30 border-white/10 focus:border-blue-500/50 focus:ring-blue-500/10 placeholder-white/20 text-white' : 'bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-100 placeholder-gray-400 text-gray-900'}`} 
+                />
               </div>
 
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <KeyRound className="h-5 w-5 text-white/40 group-focus-within:text-blue-400 transition-colors" />
+                  <KeyRound className={`h-5 w-5 group-focus-within:text-blue-500 transition-colors ${colors.textMuted}`} />
                 </div>
-                <input type="password" placeholder="Secure Password" className="w-full pl-12 pr-4 py-4 bg-black/30 backdrop-blur-sm rounded-2xl border border-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 text-white placeholder-white/30 transition-all outline-none" />
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Secure Password" 
+                  className={`w-full pl-12 pr-12 py-4 rounded-2xl border focus:ring-4 transition-all outline-none
+                  ${theme === 'dark' ? 'bg-black/30 border-white/10 focus:border-blue-500/50 focus:ring-blue-500/10 placeholder-white/20 text-white' : 'bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-100 placeholder-gray-400 text-gray-900'}`} 
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute inset-y-0 right-0 pr-4 flex items-center hover:opacity-100 transition-opacity cursor-pointer ${colors.textMuted} opacity-60`}
+                >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
 
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Fingerprint className="h-5 w-5 text-white/40 group-focus-within:text-blue-400 transition-colors" />
-                </div>
-                <input type="text" placeholder="2FA Code" className="w-full pl-12 pr-4 py-4 bg-black/30 backdrop-blur-sm rounded-2xl border border-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 text-white placeholder-white/30 transition-all outline-none font-mono tracking-widest" />
-              </div>
-
-              {/* 👇 FIXED BUTTON: Uses handleLogin instead of Link */}
-              <div className="mt-6">
+              <div className="mt-8">
                 <button 
                   onClick={() => handleLogin('/gov-admin')}
                   disabled={isLoading}
                   className="group w-full flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-8 rounded-2xl text-lg font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <span>Authenticate</span>
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span>Authenticate Node</span><ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></>}
                 </button>
-                <p className="mt-4 text-center text-xs text-white/30 font-mono">Session ID: 8821-XCA</p>
               </div>
             </div>
           )}

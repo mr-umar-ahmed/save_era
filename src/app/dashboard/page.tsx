@@ -1,206 +1,186 @@
 'use client';
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { demoData } from "@/app/lib/data"; // Assuming this exists, or use the mock below
-import UsageChart from "@/app/components/Chart";
 import { 
-  Zap, 
-  Droplets, 
-  TrendingUp, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Activity, 
-  Sparkles,
-  LayoutDashboard,
-  AlertTriangle,
-  Clock
+  Zap, Droplets, Flame, ArrowLeft, TrendingUp, AlertCircle, 
+  ThermometerSnowflake, Lightbulb, ShowerHead, Waves, Factory, 
+  Wind, UploadCloud, PieChart, Sparkles, Download, CheckCircle2
 } from "lucide-react";
 import { Outfit, Inter } from "next/font/google";
+import { useTheme } from "../components/ThemeProvider";
 
-// 1. Font Setup
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-// Mock Data (if demoData is missing)
-const data = {
-  electricity: { cost: 4500, waste: 12, units: 850, trend: 'up' },
-  water: { cost: 1200, waste: 8, liters: 15000, trend: 'down' },
-  savings: { value: '₹12,450', target: '₹15k' },
-  stats: { peak: '8-10 PM', rank: 'Top 20%', nextAlert: '6 PM' }
+// --- THE AI KNOWLEDGE BASE ---
+// This acts as our fake AI backend. It knows which items are "High Load" (red) and which are efficient (green).
+const ITEM_DATABASE: Record<string, any> = {
+  // Electricity
+  ac: { name: 'AC Unit', isHigh: true, value: 1500, icon: ThermometerSnowflake, tip: "Reduce daytime AC usage by 2 hours to save ~₹450/month." },
+  fridge: { name: 'Refrigerator', isHigh: false, value: 400, icon: Zap, tip: "Running efficiently." },
+  pump: { name: '1HP Submersible Pump', isHigh: true, value: 1200, icon: Factory, tip: "Pump running 30% longer than regional average. Check for pipe leaks." },
+  fans: { name: 'Ceiling Fans & Lights', isHigh: false, value: 250, icon: Wind, tip: "Highly efficient usage." },
+  // Water
+  shower: { name: 'Showers & Bath', isHigh: true, value: 600, icon: ShowerHead, tip: "Cut shower time by 2 mins to save 1,500L of water monthly." },
+  toilet: { name: 'Flush Tanks', isHigh: false, value: 300, icon: Waves, tip: "Normal usage detected." },
+  garden: { name: 'Garden / Lawn', isHigh: true, value: 800, icon: Droplets, tip: "Watering at night instead of noon reduces evaporation waste by 40%." },
+  livestock: { name: 'Livestock Care', isHigh: false, value: 400, icon: Factory, tip: "Stable agricultural usage." },
+  // Gas
+  stove: { name: 'Gas Stove', isHigh: false, value: 300, icon: Flame, tip: "Efficient cooking habits detected." },
+  geyser: { name: 'Gas Water Heater', isHigh: true, value: 650, icon: ThermometerSnowflake, tip: "Lower geyser temp to 45°C to save half a cylinder per month." },
+  lpg: { name: 'LPG Cylinders', isHigh: false, value: 900, icon: UploadCloud, tip: "Standard consumption." },
+  piped: { name: 'Piped City Gas', isHigh: false, value: 500, icon: Waves, tip: "Optimal flow rate." },
 };
 
-export default function Dashboard() {
+const UTILITY_CONFIG = {
+  electricity: { title: "Electricity", icon: Zap, color: "amber", unit: "₹" },
+  water: { title: "Water", icon: Droplets, color: "cyan", unit: "Liters" },
+  gas: { title: "Gas", icon: Flame, color: "rose", unit: "₹" },
+};
+
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const { theme, colors } = useTheme();
+  
+  // Get data from the URL (passed from Household Setup)
+  const type = (searchParams.get('type') as 'electricity' | 'water' | 'gas') || 'electricity';
+  const itemsParam = searchParams.get('items');
+  const selectedItemsKeys = itemsParam ? itemsParam.split(',') : ['ac', 'fridge']; // Default fallback
+
+  const config = UTILITY_CONFIG[type];
+  const cardClass = theme === 'dark' ? 'bg-[#0A0F0D] border-white/10' : 'bg-white border-gray-200 shadow-sm';
+
+  // "Math" Logic: Calculate totals and figure out if we have red/green items
+  const activeItems = selectedItemsKeys.map(key => ITEM_DATABASE[key]).filter(Boolean);
+  const totalValue = activeItems.reduce((sum, item) => sum + item.value, 0);
+  const highLoadItems = activeItems.filter(item => item.isHigh);
+  const isOptimal = highLoadItems.length === 0; // If no high-load items, they get a pure green report
+
   return (
-    <div className={`${outfit.variable} ${inter.variable} min-h-screen bg-[#050B08] text-white font-sans selection:bg-emerald-500/30 relative overflow-x-hidden`}>
-      
-      {/* 2. BACKGROUND FX */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] brightness-100 contrast-150 mix-blend-overlay"></div>
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-12">
-        
-        {/* 3. HEADER */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-4">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">System Online</span>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-black font-display tracking-tight text-white">
-              Command <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Center</span>
-            </h1>
-            <p className="text-white/50 text-lg mt-2">Real-time biometrics for your home infrastructure.</p>
+    <div className="relative z-10 max-w-5xl mx-auto">
+      {/* Header */}
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+              <div className={`px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                  <Sparkles className="w-3.5 h-3.5" /> AI Analysis Complete
+              </div>
           </div>
+          <h1 className="text-4xl md:text-5xl font-black font-display tracking-tight flex items-center gap-3">
+             {config.title} <span className={`text-transparent bg-clip-text bg-gradient-to-r from-${config.color}-400 to-${config.color}-600`}>Overview</span>
+          </h1>
+        </div>
+      </header>
 
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden md:block">
-               <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Location</p>
-               <p className="text-white font-medium">Raichur, KA</p>
-            </div>
-            <div className="h-10 w-px bg-white/10 hidden md:block" />
-            <Link href="/settings" className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-               <LayoutDashboard className="w-5 h-5 text-white/70" />
-            </Link>
-          </div>
+      {/* Main Stats Card */}
+      <div className={`p-8 rounded-[2.5rem] border relative overflow-hidden mb-8 transition-all ${cardClass}`}>
+        <div className="absolute -top-4 -right-4 p-8 opacity-5">
+            <config.icon className={`w-48 h-48 text-${config.color}-500 -rotate-12`} />
         </div>
 
-        {/* 4. KPI BENTO GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          
-          {/* Card 1: Electricity (Amber) */}
-          <div className="group relative bg-[#0A0F0D]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 hover:border-amber-500/30 transition-all duration-500 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  <Zap className="w-6 h-6" />
-                </div>
-                <div className="flex items-center gap-1 text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/20">
-                  <ArrowUpRight className="w-3 h-3" /> {data.electricity.waste}% Waste
-                </div>
-              </div>
-              <p className="text-white/50 text-sm font-medium">Electricity</p>
-              <p className="text-3xl font-black font-display text-white mt-1">₹{data.electricity.cost}</p>
-              <div className="mt-4 flex items-center gap-2 text-xs text-white/40">
-                 <Activity className="w-3 h-3 text-amber-500" />
-                 <span>{data.electricity.units} kWh usage</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Water (Cyan) */}
-          <div className="group relative bg-[#0A0F0D]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 hover:border-cyan-500/30 transition-all duration-500 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  <Droplets className="w-6 h-6" />
-                </div>
-                <div className="flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
-                  <ArrowDownRight className="w-3 h-3" /> Optimal
-                </div>
-              </div>
-              <p className="text-white/50 text-sm font-medium">Water</p>
-              <p className="text-3xl font-black font-display text-white mt-1">₹{data.water.cost}</p>
-              <div className="mt-4 flex items-center gap-2 text-xs text-white/40">
-                 <Activity className="w-3 h-3 text-cyan-500" />
-                 <span>{data.water.liters.toLocaleString()} L usage</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Savings (Emerald - Main) */}
-          <div className="group relative bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-xl border border-emerald-500/30 rounded-[2rem] p-6 hover:border-emerald-400/50 transition-all duration-500 hover:-translate-y-1 lg:col-span-1">
-             <div className="absolute top-0 right-0 p-6 opacity-10">
-               <Sparkles className="w-24 h-24 text-emerald-400" />
-             </div>
-             <div className="relative z-10 h-full flex flex-col justify-between">
+        <div className="relative z-10">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 border-b border-white/10 pb-8">
                 <div>
-                  <h3 className="text-emerald-400 font-bold text-sm uppercase tracking-wider mb-1">Total Savings</h3>
-                  <p className="text-4xl font-black font-display text-white">{data.savings.value}</p>
+                  <h2 className="text-2xl font-bold font-display flex items-center gap-3">
+                      Estimated Consumption <config.icon className={`w-5 h-5 text-${config.color}-500`} />
+                  </h2>
+                  <p className={`text-sm mt-1 ${colors.textMuted}`}>Based on your scanned bill & appliance setup</p>
                 </div>
-                <div className="mt-4">
-                   <div className="flex justify-between text-xs text-emerald-200/60 mb-2">
-                     <span>Goal: {data.savings.target}</span>
-                     <span>82%</span>
-                   </div>
-                   <div className="h-2 bg-emerald-950 rounded-full overflow-hidden">
-                      <div className="h-full w-[82%] bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-                   </div>
+                <div className="text-right">
+                  <span className={`text-3xl font-black font-mono text-${config.color}-400`}>
+                    {type === 'water' ? '' : '₹'}{totalValue.toLocaleString()}{type === 'water' ? ' L' : ''}
+                  </span>
                 </div>
-             </div>
-          </div>
+            </div>
 
-          {/* Card 4: Quick HUD */}
-          <div className="bg-[#0A0F0D]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 flex flex-col justify-between">
-             <div className="flex items-center gap-3 mb-2">
-               <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-               <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Live HUD</span>
-             </div>
-             <div className="space-y-3">
-               <div className="flex justify-between items-center py-2 border-b border-white/5">
-                 <span className="text-sm text-white/40">Peak Hour</span>
-                 <span className="text-sm font-bold text-white">{data.stats.peak}</span>
-               </div>
-               <div className="flex justify-between items-center py-2 border-b border-white/5">
-                 <span className="text-sm text-white/40">Efficiency Rank</span>
-                 <span className="text-sm font-bold text-emerald-400">{data.stats.rank}</span>
-               </div>
-               <div className="flex justify-between items-center pt-2">
-                 <span className="text-sm text-white/40">Next Alert</span>
-                 <span className="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">{data.stats.nextAlert}</span>
-               </div>
-             </div>
-          </div>
+            {/* Dynamic Appliance Bars */}
+            <div className="space-y-6">
+                {activeItems.map((item, i) => {
+                  const percent = Math.round((item.value / totalValue) * 100);
+                  // Dynamic color: Red if High Load, Emerald if efficient
+                  const barColor = item.isHigh ? '#EF4444' : '#10B981';
+
+                  return (
+                    <div key={i}>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="flex items-center gap-2 font-bold">
+                              <item.icon className={`w-4 h-4 ${item.isHigh ? 'text-red-400' : 'text-emerald-400'}`} /> 
+                              {item.name}
+                          </span>
+                          <span className="font-mono font-medium opacity-70">
+                            {type === 'water' ? '' : '₹'}{item.value} <span className="text-xs ml-1">({percent}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-3 rounded-full overflow-hidden bg-white/5">
+                          <div 
+                              style={{ width: `${percent}%`, backgroundColor: barColor }} 
+                              className="h-full rounded-full shadow-lg transition-all duration-1000 ease-out"
+                          />
+                        </div>
+                    </div>
+                  );
+                })}
+            </div>
         </div>
-
-        {/* 5. CHARTS SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-           <UsageChart 
-             data={demoData.electricity.appliances}
-             title="Energy Matrix"
-             color="#F59E0B" // Amber
-             total={`₹${demoData.electricity.monthlyCost}`}
-           />
-           <UsageChart 
-             data={demoData.water.fixtures}
-             title="Water Flow"
-             color="#06B6D4" // Cyan
-             total={`₹${demoData.water.monthlyCost}`}
-           />
-        </div>
-
-        {/* 6. BOTTOM CTA */}
-        <div className="flex flex-col items-center justify-center space-y-8">
-           <Link 
-             href="/breakdown"
-             className="group relative px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-transform duration-300 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
-           >
-             <span className="relative z-10 flex items-center gap-2">
-               Initialize Deep Analysis <ArrowUpRight className="w-5 h-5" />
-             </span>
-             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 opacity-0 group-hover:opacity-20 transition-opacity" />
-           </Link>
-           
-           <div className="flex gap-6 text-sm font-medium text-white/30">
-              <Link href="/" className="hover:text-emerald-400 transition-colors">Home</Link>
-              <span>•</span>
-              <Link href="/alerts" className="hover:text-emerald-400 transition-colors flex items-center gap-1">
-                 <AlertTriangle className="w-3 h-3" /> Alerts
-              </Link>
-              <span>•</span>
-              <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Real-time</span>
-           </div>
-        </div>
-
       </div>
+
+      {/* Dynamic AI Feedback / Diagnostics */}
+      <h2 className="text-lg font-bold font-display mb-4 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          AI Diagnostic Report
+      </h2>
+
+      <div className="space-y-4 mb-12">
+        {/* GREEN PRAISE: Shows if they have NO high-load items, OR as a constant positive reinforcement */}
+        <div className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-black/40 border-emerald-500/20' : 'bg-white border-emerald-100'}`}>
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                  <p className="font-bold text-sm">Efficiency Baseline Good</p>
+                  <p className={`text-xs mt-1.5 leading-relaxed ${colors.textMuted}`}>
+                    {isOptimal 
+                      ? "Excellent! Your selected setup contains no high-drain anomalies. You are in the top 10% of efficient users in your region this month." 
+                      : "Base appliances (like fans and lights) are operating within optimal ranges compared to neighborhood averages."}
+                  </p>
+              </div>
+            </div>
+        </div>
+
+        {/* RED WARNINGS: Generates dynamically based on the specific high-load items they clicked */}
+        {highLoadItems.map((item, i) => (
+          <div key={i} className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-black/40 border-red-500/20' : 'bg-white border-red-100'}`}>
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                    <p className="font-bold text-sm text-red-400">High Usage Detected: {item.name}</p>
+                    <p className={`text-xs mt-1.5 leading-relaxed ${colors.textMuted}`}>
+                      {item.tip}
+                    </p>
+                </div>
+              </div>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
+// Wrapper to handle Next.js SearchParams safely
+export default function DynamicDashboard() {
+  const { theme, colors } = useTheme();
+  
+  return (
+    <div className={`${outfit.variable} ${inter.variable} w-full min-h-screen ${colors.bg} ${colors.text} font-sans transition-colors duration-300 p-4 md:p-8`}>
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+         <div className={`absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px] opacity-10 ${theme === 'dark' ? 'bg-emerald-500' : 'bg-emerald-200'}`} />
+      </div>
+      
+      <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
+        <DashboardContent />
+      </Suspense>
     </div>
   );
 }

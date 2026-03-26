@@ -1,115 +1,74 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown, Leaf, LayoutDashboard, Zap, Trophy, Bell, Settings, Lightbulb, PieChart, Home } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Sun, Moon, Bell, Menu } from 'lucide-react';
+import { useTheme } from './ThemeProvider';
 
-// Defined routes based on your folder structure (excluding gov-admin and demo)
-const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Usage Breakdown', href: '/breakdown', icon: PieChart },
-  { name: 'Impact & Legacy', href: '/impact', icon: Leaf },
-  { name: 'Weekly Challenges', href: '/challenges', icon: Trophy },
-  { name: 'Smart Recommendations', href: '/recommendations', icon: Lightbulb },
-  { name: 'Alerts', href: '/alerts', icon: Bell },
-  { name: 'Utility Input', href: '/utility-input', icon: Zap },
-  { name: 'Household Setup', href: '/household-setup', icon: Home },
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
-
-export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
+// Props to handle mobile menu toggling from Layout
+export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
+  const { theme, toggleTheme, colors } = useTheme();
   const pathname = usePathname();
-  const menuRef = useRef<HTMLDivElement>(null);
+  const isPublicPage = ['/', '/auth'].includes(pathname);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // === 1. PUBLIC LANDING NAVBAR ===
+  if (isPublicPage) {
+     return (
+        <nav className={`fixed top-0 left-0 right-0 z-50 h-16 transition-colors duration-300 ${colors.navBg}`}>
+           <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+              <div className="font-bold text-xl tracking-tight flex items-center gap-2">
+                 <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"/> Savera
+              </div>
+              <div className="flex gap-4 items-center">
+                 <button onClick={toggleTheme} className={`p-2 rounded-full border ${colors.border} hover:bg-gray-100/10`}>
+                    {theme === 'dark' ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}
+                 </button>
+                 <Link href="/auth" className="px-5 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-gray-200 transition-colors">
+                    Login
+                 </Link>
+              </div>
+           </div>
+        </nav>
+     );
+  }
 
+  // === 2. APP DASHBOARD HEADER ===
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050B08]/80 backdrop-blur-md border-b border-white/10 h-16">
-      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+    <header className={`fixed top-0 right-0 left-0 lg:left-64 z-30 h-16 flex items-center justify-between px-4 lg:px-8 transition-all duration-300 ${colors.navBg}`}>
         
-        {/* Logo Area */}
-        <Link href="/dashboard" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
-            <Leaf className="w-4 h-4 text-emerald-400" />
-          </div>
-          <span className="font-bold text-lg tracking-wide text-white">SAVERA</span>
-        </Link>
+        {/* Left: Mobile Menu & Page Title */}
+        <div className="flex items-center gap-4">
+           <button onClick={onMenuClick} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white">
+              <Menu className="w-6 h-6" />
+           </button>
+           {/* Breadcrumb / Title */}
+           <div className="hidden md:block">
+              <span className={`text-xs font-bold uppercase tracking-wider ${colors.textMuted}`}>Dashboard</span>
+              <span className="mx-2 text-gray-600">/</span>
+              <span className={`text-sm font-bold ${colors.text}`}>Overview</span>
+           </div>
+        </div>
 
-        {/* Dropdown Menu Container */}
-        <div className="relative" ref={menuRef}>
+        {/* Right: Actions */}
+        <div className="flex items-center gap-3">
+            {/* Theme Toggle */}
             <button 
-                onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                    isOpen 
-                    ? 'bg-emerald-500 text-[#050B08] shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
-                    : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
-                }`}
+                onClick={toggleTheme}
+                className={`p-2 rounded-full border transition-all ${colors.border} ${theme === 'dark' ? 'hover:bg-white/10 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}
             >
-                <span>Navigate</span>
-                {isOpen ? <X className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Animated Dropdown */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="absolute right-0 top-full mt-3 w-64 bg-[#0A0F0D] border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-2"
-                    >
-                        <div className="max-h-[80vh] overflow-y-auto custom-scrollbar">
-                            <div className="px-4 py-2 text-xs font-bold text-white/40 uppercase tracking-widest">
-                                Menu
-                            </div>
-                            
-                            {navItems.map((item) => {
-                                const isActive = pathname === item.href;
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        onClick={() => setIsOpen(false)}
-                                        className={`flex items-center gap-3 px-4 py-3 text-sm transition-all border-l-2 ${
-                                            isActive 
-                                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500 font-medium' 
-                                            : 'text-white/70 hover:bg-white/5 hover:text-white border-transparent'
-                                        }`}
-                                    >
-                                        <item.icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-white/40'}`} />
-                                        {item.name}
-                                    </Link>
-                                );
-                            })}
+            {/* Notifications */}
+            <button className={`p-2 rounded-full border transition-all ${colors.border} ${theme === 'dark' ? 'hover:bg-white/10 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}>
+                <Bell className="w-4 h-4" />
+            </button>
 
-                            <div className="h-px bg-white/10 my-2 mx-4" />
-                            
-                            <Link 
-                                href="/auth"
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-l-2 border-transparent"
-                            >
-                                Logout
-                            </Link>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Profile Avatar */}
+            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-emerald-500/20 cursor-pointer">
+                RS
+            </div>
         </div>
-      </div>
-    </nav>
+    </header>
   );
 }
