@@ -144,7 +144,7 @@ function GovAdminContent() {
           return newData;
         });
 
-        setRegionalData(prevRegions => 
+        setRegionalData((prevRegions: any[]) => 
           data.regions.map((newRegionData: any, index: number) => {
             const oldUsage = prevRegions[index]?.usage || 50;
             const newUsage = newRegionData.usage;
@@ -390,7 +390,7 @@ function GovAdminContent() {
                 </div>
               </div>
 
-              {/* COMMAND TERMINAL (NEW MULTI-PURPOSE CMS) */}
+              {/* COMMAND TERMINAL */}
               <div className={`bg-gradient-to-br from-${config.color}-950/50 to-slate-900/50 backdrop-blur-xl border border-${config.color}-500/20 rounded-3xl p-6 relative overflow-hidden shrink-0`}>
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${config.color}-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2`} />
                 
@@ -398,7 +398,6 @@ function GovAdminContent() {
                   <Server className={`w-5 h-5 ${config.accent}`} /> Command Terminal
                 </h2>
 
-                {/* Tabs */}
                 <div className="flex bg-black/40 rounded-lg p-1 mb-4 relative z-10 border border-white/5">
                   <button onClick={() => setActiveTab('broadcast')} className={`flex-1 text-xs font-bold py-2 rounded-md transition-colors ${activeTab === 'broadcast' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}>
                     Push Broadcast
@@ -409,9 +408,7 @@ function GovAdminContent() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3 relative z-10">
-                  
                   {activeTab === 'broadcast' ? (
-                    // FORM 1: Ntfy Cell Broadcast
                     <>
                       <div>
                         <select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-full bg-[#020617] border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-blue-500 outline-none">
@@ -424,7 +421,6 @@ function GovAdminContent() {
                       </div>
                     </>
                   ) : (
-                    // FORM 2: City Hub CMS Update
                     <>
                       <div>
                         <select value={portalCategory} onChange={(e) => setPortalCategory(e.target.value)} className="w-full bg-[#020617] border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-blue-500 outline-none">

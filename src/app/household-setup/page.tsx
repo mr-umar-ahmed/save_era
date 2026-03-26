@@ -18,15 +18,16 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 type UtilityKey = 'electricity' | 'water' | 'gas';
 
+// --- TYPESCRIPT FIX: Added style?: React.CSSProperties ---
 interface ConfigItem {
   id: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
 interface UtilityConfig {
   title: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: 'amber' | 'cyan' | 'rose';
   items: ConfigItem[];
 }

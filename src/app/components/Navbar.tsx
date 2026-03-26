@@ -14,8 +14,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   // === 1. PUBLIC LANDING NAVBAR ===
   if (isPublicPage) {
      return (
-        <nav className={`fixed top-0 left-0 right-0 z-50 h-16 transition-colors duration-300 ${colors.navBg}`}>
-           <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+       <nav className="fixed top-0 left-0 right-0 z-50 h-16 transition-colors duration-300 bg-[#0A0F0D]/80 backdrop-blur-md border-b border-white/10"> <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
               <div className="font-bold text-xl tracking-tight flex items-center gap-2">
                  <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"/> Savera
               </div>
@@ -34,8 +33,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
   // === 2. APP DASHBOARD HEADER ===
   return (
-    <header className={`fixed top-0 right-0 left-0 lg:left-64 z-30 h-16 flex items-center justify-between px-4 lg:px-8 transition-all duration-300 ${colors.navBg}`}>
-        
+   <header className="fixed top-0 right-0 left-0 lg:left-64 z-30 h-16 flex items-center justify-between px-4 lg:px-8 transition-all duration-300 bg-[#0A0F0D]/80 backdrop-blur-md border-b border-white/10">    
         {/* Left: Mobile Menu & Page Title */}
         <div className="flex items-center gap-4">
            <button onClick={onMenuClick} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white">
