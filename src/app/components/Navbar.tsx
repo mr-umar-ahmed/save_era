@@ -33,8 +33,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
   // === 2. APP DASHBOARD HEADER ===
   return (
-   <header className="fixed top-0 right-0 left-0 lg:left-64 z-30 h-16 flex items-center justify-between px-4 lg:px-8 transition-all duration-300 bg-[#0A0F0D]/80 backdrop-blur-md border-b border-white/10">    
-        {/* Left: Mobile Menu & Page Title */}
+   <header className="fixed top-0 right-0 left-0 lg:left-64 z-30 h-16 flex items-center justify-between px-4 lg:px-8 transition-all duration-300 bg-[#0A0F0D]/80 backdrop-blur-md border-b border-white/10">      {/* Left: Mobile Menu & Page Title */}
         <div className="flex items-center gap-4">
            <button onClick={onMenuClick} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white">
               <Menu className="w-6 h-6" />
